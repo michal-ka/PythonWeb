@@ -2,16 +2,38 @@ from typing import TextIO, List
 
 from flask import Flask, render_template, request, escape
 from vsearch import search4letters
+import mysql.connector
 
 app = Flask(__name__)
 
-def log_request(req: 'flask_erquest', res: str) -> None:
-    log: TextIO
-    with open('vsearch.log','a') as log:
-        print(req.form, req.remote_addr, req.user_agent, res, file=log, sep='|')
-        # print(req.remote_addr, file=log, end='|')
-        # print(req.user_agent, file=log, end='|')
-        # print(res, file=log,)
+#def log_request(req: 'flask_erquest', res: str) -> None:
+    # log: TextIO   - first, file version
+    # with open('vsearch.log','a') as log:
+    #     print(req.form, req.remote_addr, req.user_agent, res, file=log, sep='|')
+
+def log_request(req: 'flask_request', res: str) -> None:
+    """Loguje szczegóły żądania sieciowego oraz wyniki."""
+    dbconfig = {'host': '127.0.0.1',
+                'user': 'vsearch',
+                'password': 'Vasteras1',
+                'database': 'vsearchlogDB', }
+
+    conn = mysql.connector.connect(**dbconfig)
+    cursor = conn.cursor()
+
+    _SQL = """insert into log
+             (phrase, letters, ip, browser_string, results)
+             values
+             (%s, %s, %s, %s, %s)"""
+    cursor.execute(_SQL, (req.form['phrase'],
+                          req.form['letters'],
+                          req.remote_addr,
+                          req.user_agent.browser,
+                          res,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 
 @app.route('/search4', methods=['POST'])
 def do_search() -> 'html':
