@@ -1,4 +1,4 @@
-from typing import TextIO, List
+#from typing import TextIO, List
 
 from flask import Flask, render_template, request, escape
 from vsearch import search4letters
